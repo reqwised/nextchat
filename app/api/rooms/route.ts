@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
 
     // Get all rooms for the user
     const rooms = await sql`
-      SELECT DISTINCT 
+      SELECT 
         r.id,
         r.name,
         r.image_url,

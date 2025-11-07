@@ -4,7 +4,10 @@ import sql from '@/lib/db';
 export async function POST(request: NextRequest) {
   try {
     const userId = request.headers.get('x-user-id');
-    const { roomId, message, type = 'text' } = await request.json();
+    const body = await request.json();
+    const { roomId, message, type = 'text', mediaUrl, mediaType, fileName, fileSize } = body;
+
+    console.log('Send message request:', { userId, roomId, type, mediaUrl, fileName });
 
     if (!userId) {
       return NextResponse.json(
@@ -28,14 +31,35 @@ export async function POST(request: NextRequest) {
 
     // Insert message
     const result = await sql`
-      INSERT INTO messages (room_id, sender_id, type, message)
-      VALUES (${roomId}, ${userId}, ${type}, ${message})
-      RETURNING id, type, message, sender_id as sender, created_at
+      INSERT INTO messages (room_id, sender_id, type, message, media_url, media_type, file_name, file_size)
+      VALUES (
+        ${roomId}, 
+        ${userId}, 
+        ${type}, 
+        ${message || ''}, 
+        ${mediaUrl || null}, 
+        ${mediaType || null}, 
+        ${fileName || null}, 
+        ${fileSize || null}
+      )
+      RETURNING 
+        id, 
+        type, 
+        message, 
+        sender_id as sender, 
+        created_at,
+        media_url,
+        media_type,
+        file_name,
+        file_size
     `;
+
+    const savedMessage = result[0];
+    console.log('Message saved to DB:', savedMessage);
 
     return NextResponse.json({ 
       success: true,
-      message: result[0]
+      message: savedMessage
     });
   } catch (error) {
     console.error('Send message error:', error);
